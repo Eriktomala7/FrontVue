@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:3000/auth';
+const API_URL = 'https://apicomple-1.onrender.com/auth';
 
 export interface User {
   id: string | number;
@@ -26,7 +26,7 @@ export async function register(payload: RegisterPayload): Promise<void> {
 }
 
 export async function requestPasswordReset(email: string): Promise<void> {
-  await axios.post('http://localhost:3000/usuarios/recuperar', { email });
+  await axios.post('https://apicomple-1.onrender.com/usuarios/recuperar', { email });
 }
 
 export async function login(email: string, password: string): Promise<LoginResponse> {
