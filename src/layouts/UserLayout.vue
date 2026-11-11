@@ -32,7 +32,7 @@
       <header class="user-topbar">
         <div class="user-heading">
           <p class="user-breadcrumb">Espacio de usuario <span>/</span> {{ currentSection }}</p>
-          <h1>Buenos días, {{ displayName }}</h1>
+          <h1>{{ currentSection === 'Inicio' ? `Buenos días, ${displayName}` : currentSection }}</h1>
         </div>
         <div class="user-topbar-actions">
           <div ref="notificationsRoot" class="notifications-control">
@@ -187,22 +187,18 @@ const menuItems = [
   { to: '/dashboard', label: 'Inicio', icon: 'home' },
   { to: '/dashboard/products', label: 'Productos', icon: 'box' },
   { to: '/dashboard/requests', label: 'Mis solicitudes', icon: 'file' },
-  { to: '/dashboard#activity', label: 'Actividad', icon: 'clock' },
-  { to: '/dashboard/requests', label: 'Notificaciones', icon: 'bell' },
+  { to: '/dashboard/activity', label: 'Actividad', icon: 'clock' },
+  { to: '/dashboard/notifications', label: 'Notificaciones', icon: 'bell' },
   { to: '/dashboard/profile', label: 'Mi Perfil', icon: 'profile' },
 ]
 
 const currentSection = computed(() => {
-  if (route.hash === '#activity') return 'Actividad'
-  return menuItems.find(item => item.to !== '/dashboard#activity' && isActive(item.to))?.label || 'Inicio'
+  return menuItems.find(item => item.to !== '/dashboard' && isActive(item.to))?.label || 'Inicio'
 })
 
 function isActive(path: string) {
-  const basePath = path.split('#')[0]
-  if (basePath === '/dashboard') {
-    return route.path === basePath && (path.includes('#') ? route.hash === '#activity' : route.hash !== '#activity')
-  }
-  return route.path === basePath || route.path.startsWith(basePath + '/')
+  if (path === '/dashboard') return route.path === path
+  return route.path === path || route.path.startsWith(path + '/')
 }
 
 function handleLogout() {
@@ -216,12 +212,14 @@ function handleUserUpdated(event: Event) {
 
 onMounted(() => {
   window.addEventListener('auth-user-updated', handleUserUpdated)
+  window.addEventListener('user-notifications-updated', loadNotifications)
   document.addEventListener('click', handleDocumentClick)
   void loadNotifications()
   notificationsTimer = window.setInterval(loadNotifications, NOTIFICATION_REFRESH_MS)
 })
 onUnmounted(() => {
   window.removeEventListener('auth-user-updated', handleUserUpdated)
+  window.removeEventListener('user-notifications-updated', loadNotifications)
   document.removeEventListener('click', handleDocumentClick)
   window.clearInterval(notificationsTimer)
 })

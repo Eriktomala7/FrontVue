@@ -43,7 +43,7 @@
             <h2>Actividad de inventario</h2>
             <p>Movimientos recientes registrados</p>
           </div>
-          <RouterLink to="/dashboard#activity">Ver actividad</RouterLink>
+          <RouterLink to="/dashboard/activity">Ver actividad</RouterLink>
         </header>
 
         <div v-if="loading" class="dashboard-empty">Cargando actividad...</div>

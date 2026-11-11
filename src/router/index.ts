@@ -43,6 +43,8 @@ const routes: RouteRecordRaw[] = [
       { path: '', name: 'UserDashboard', component: () => import('../views/user/Dashboard.vue'), meta: { roles: ['ADMIN', 'USUARIO'] } },
       { path: 'products', name: 'UserProducts', component: () => import('../views/user/ProductCatalog.vue'), meta: { roles: ['ADMIN', 'USUARIO'] } },
       { path: 'requests', name: 'UserRequests', component: () => import('../views/user/MyRequests.vue'), meta: { roles: ['ADMIN', 'USUARIO'] } },
+      { path: 'activity', name: 'UserActivity', component: () => import('../views/user/Activity.vue'), meta: { roles: ['ADMIN', 'USUARIO'] } },
+      { path: 'notifications', name: 'UserNotifications', component: () => import('../views/user/Notifications.vue'), meta: { roles: ['ADMIN', 'USUARIO'] } },
       { path: 'profile', name: 'UserProfile', component: () => import('../views/user/Profile.vue'), meta: { roles: ['ADMIN', 'USUARIO'] } },
     ]
   },

@@ -27,7 +27,7 @@ export interface NuevaSolicitud {
 
 export interface NotificacionSolicitud {
   id: number;
-  tipo: 'APROBADA' | 'RECHAZADA';
+  tipo: EstadoSolicitud;
   mensaje: string;
   fecha: string;
   leida?: boolean;
