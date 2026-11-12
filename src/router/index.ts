@@ -22,6 +22,16 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../views/Login.vue')
   },
   {
+    path: '/email-sent',
+    name: 'PasswordResetEmailSent',
+    component: () => import('../views/Login.vue')
+  },
+  {
+    path: '/reset-password',
+    name: 'ResetPassword',
+    component: () => import('../views/Login.vue')
+  },
+  {
     path: '/admin',
     component: () => import('../layouts/AdminLayout.vue'),
     meta: { roles: ['ADMIN'] },

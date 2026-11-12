@@ -51,19 +51,23 @@
 
         <header class="form-heading">
           <p class="welcome">
-            {{ isRegister ? 'Crea tu cuenta' : isForgotPassword ? 'Recuperación de cuenta' : 'Bienvenido de nuevo' }}
+            {{ isRegister ? 'Crea tu cuenta' : isEmailSent ? 'Recuperación de cuenta' : isResetPassword ? 'Recuperación de cuenta' : isForgotPassword ? 'Recuperación de cuenta' : 'Bienvenido de nuevo' }}
           </p>
-          <h2>{{ isRegister ? 'Regístrate' : isForgotPassword ? '¿Olvidaste tu contraseña?' : 'Inicia sesión' }}</h2>
+          <h2>{{ isRegister ? 'Regístrate' : isEmailSent ? 'Revisa tu correo' : isResetPassword ? 'Restablece tu contraseña' : isForgotPassword ? '¿Olvidaste tu contraseña?' : 'Inicia sesión' }}</h2>
           <p class="form-description">
             {{ isRegister
               ? 'Completa tus datos para crear una cuenta de usuario.'
-              : isForgotPassword
+              : isEmailSent
+                ? 'Si la dirección está registrada, recibirás un enlace para restablecer tu contraseña. Revisa también tu carpeta de spam.'
+              : isResetPassword
+                ? 'Crea una contraseña nueva para volver a acceder a tu cuenta.'
+                : isForgotPassword
                 ? 'Ingresa tu correo y te enviaremos un código para restablecer tu contraseña.'
                 : 'Accede a tu espacio de trabajo para continuar.' }}
           </p>
         </header>
 
-        <form class="login-form" @submit.prevent="isRegister ? onRegister() : isForgotPassword ? onForgotPassword() : onSubmit()">
+        <form v-if="!isEmailSent" class="login-form" @submit.prevent="isRegister ? onRegister() : isResetPassword ? onResetPassword() : isForgotPassword ? onForgotPassword() : onSubmit()">
           <div v-if="isRegister" class="field">
             <label for="name">Nombres</label>
             <input
@@ -76,7 +80,7 @@
               placeholder="Tus nombres"
             />
           </div>
-          <div class="field">
+          <div v-if="!isResetPassword" class="field">
             <label for="email">Correo electrónico</label>
             <input
               id="email"
@@ -88,20 +92,20 @@
               placeholder="tu@ejemplo.com"
             />
           </div>
-          <div v-if="!isForgotPassword" class="field">
-            <label for="password">Contraseña</label>
+          <div v-if="!isForgotPassword || isResetPassword" class="field">
+            <label for="password">{{ isResetPassword ? 'Nueva contraseña' : 'Contraseña' }}</label>
             <input
               id="password"
               v-model="password"
               type="password"
-              :autocomplete="isRegister ? 'new-password' : 'current-password'"
+              :autocomplete="isRegister || isResetPassword ? 'new-password' : 'current-password'"
               required
-              :minlength="isRegister ? 6 : undefined"
+              :minlength="isRegister || isResetPassword ? 6 : undefined"
               placeholder="••••••••"
             />
           </div>
-          <div v-if="isRegister" class="field">
-            <label for="confirm-password">Confirmar contraseña</label>
+          <div v-if="isRegister || isResetPassword" class="field">
+            <label for="confirm-password">{{ isResetPassword ? 'Confirmar nueva contraseña' : 'Confirmar contraseña' }}</label>
             <input
               id="confirm-password"
               v-model="confirmPassword"
@@ -111,14 +115,14 @@
               placeholder="••••••••"
             />
           </div>
-          <div v-if="!isRegister && !isForgotPassword" class="forgot-row">
+          <div v-if="!isRegister && !isForgotPassword && !isResetPassword" class="forgot-row">
             <RouterLink to="/forgot-password">¿Olvidaste tu contraseña?</RouterLink>
           </div>
           <button class="submit-button" type="submit" :disabled="loading">
             <span>
               {{ loading
-                ? (isRegister ? 'Creando cuenta...' : isForgotPassword ? 'Enviando...' : 'Ingresando...')
-                : (isRegister ? 'Crear cuenta' : isForgotPassword ? 'Enviar código' : 'Entrar al sistema') }}
+                ? (isRegister ? 'Creando cuenta...' : isResetPassword ? 'Restableciendo...' : isForgotPassword ? 'Enviando...' : 'Ingresando...')
+                : (isRegister ? 'Crear cuenta' : isResetPassword ? 'Restablecer contraseña' : isForgotPassword ? 'Enviar código' : 'Entrar al sistema') }}
             </span>
             <svg v-if="!loading" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M5 12h14m-6-6 6 6-6 6" />
@@ -129,7 +133,10 @@
         </form>
 
         <p class="register-prompt">
-          <template v-if="isRegister || isForgotPassword">
+          <template v-if="isEmailSent">
+            ¿No recibiste el correo? <RouterLink to="/forgot-password">Intentar de nuevo</RouterLink>
+          </template>
+          <template v-else-if="isRegister || isForgotPassword || isResetPassword">
             ¿Ya tienes una cuenta? <RouterLink to="/login">Inicia sesión</RouterLink>
           </template>
           <template v-else>
@@ -144,13 +151,15 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
-import { login, register, requestPasswordReset } from '../services/authService'
+import { login, register, requestPasswordReset, resetPassword } from '../services/authService'
 import './Login.css'
 
 const route = useRoute()
 const router = useRouter()
 const isRegister = computed(() => route.path === '/register')
 const isForgotPassword = computed(() => route.path === '/forgot-password')
+const isEmailSent = computed(() => route.path === '/email-sent')
+const isResetPassword = computed(() => route.path === '/reset-password')
 const name = ref('')
 const email = ref('')
 const password = ref('')
@@ -159,10 +168,18 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 const successMessage = ref<string | null>(null)
 
-watch(() => route.path, () => {
+function getResetToken(): string {
+  const token = route.query.token
+  return typeof token === 'string' ? token : ''
+}
+
+watch(() => [route.path, route.query.token], () => {
   error.value = null
   successMessage.value = null
-})
+  if (isResetPassword.value && !getResetToken()) {
+    error.value = 'El enlace no contiene un código de restablecimiento válido. Solicita uno nuevo.'
+  }
+}, { immediate: true })
 
 function roleHome(rol?: string) {
   return rol === 'ADMIN' ? '/admin' : '/dashboard'
@@ -230,10 +247,44 @@ async function onForgotPassword() {
   try {
     loading.value = true
     await requestPasswordReset(email.value.trim())
-    successMessage.value = 'Te enviamos un código de restablecimiento a tu correo. Revisa tu bandeja de entrada.'
+    await router.replace('/email-sent')
   } catch (e: any) {
     error.value = e?.response?.data?.message || e?.message || 'No se pudo solicitar la recuperación. Inténtalo nuevamente.'
     console.error('Password recovery error:', e)
+  } finally {
+    loading.value = false
+  }
+}
+
+async function onResetPassword() {
+  error.value = null
+  successMessage.value = null
+
+  if (!getResetToken()) {
+    error.value = 'El enlace no contiene un código de restablecimiento válido. Solicita uno nuevo.'
+    return
+  }
+
+  if (password.value.length < 6) {
+    error.value = 'La contraseña debe tener al menos 6 caracteres'
+    return
+  }
+
+  if (password.value !== confirmPassword.value) {
+    error.value = 'Las contraseñas no coinciden'
+    return
+  }
+
+  try {
+    loading.value = true
+    await resetPassword(getResetToken(), password.value)
+    successMessage.value = 'Tu contraseña se restableció correctamente. Serás redirigido al inicio de sesión.'
+    window.setTimeout(() => {
+      void router.replace('/login')
+    }, 1800)
+  } catch (e: any) {
+    error.value = e?.response?.data?.message || e?.message || 'No se pudo restablecer la contraseña. Solicita un enlace nuevo e inténtalo nuevamente.'
+    console.error('Password reset error:', e)
   } finally {
     loading.value = false
   }
