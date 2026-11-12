@@ -98,7 +98,7 @@ router.beforeEach((to: RouteLocationNormalized) => {
   }
 
   // Evita ir a /login si ya está autenticado
-  if (to.name === 'Login' && isAuthenticated) {
+  if (to.name === 'Login' && isAuthenticated && typeof to.query.token !== 'string') {
     const redirect = (to.query?.redirect as string) || roleHome(userRole)
     return { path: redirect, replace: true }
   }

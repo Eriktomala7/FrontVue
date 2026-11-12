@@ -62,7 +62,7 @@
               : isResetPassword
                 ? 'Crea una contraseña nueva para volver a acceder a tu cuenta.'
                 : isForgotPassword
-                ? 'Ingresa tu correo y te enviaremos un código para restablecer tu contraseña.'
+                  ? 'Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña.'
                 : 'Accede a tu espacio de trabajo para continuar.' }}
           </p>
         </header>
@@ -159,7 +159,9 @@ const router = useRouter()
 const isRegister = computed(() => route.path === '/register')
 const isForgotPassword = computed(() => route.path === '/forgot-password')
 const isEmailSent = computed(() => route.path === '/email-sent')
-const isResetPassword = computed(() => route.path === '/reset-password')
+const isResetPassword = computed(() =>
+  route.path === '/reset-password' || (route.path === '/login' && typeof route.query.token === 'string'),
+)
 const name = ref('')
 const email = ref('')
 const password = ref('')
