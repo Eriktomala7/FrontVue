@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = 'https://apicomple-1.onrender.com/auth';
+const API_BASE_URL = 'https://apicomple-1.onrender.com';
+const API_URL = `${API_BASE_URL}/auth`;
 
 export interface User {
   id: string | number;
@@ -26,7 +27,11 @@ export async function register(payload: RegisterPayload): Promise<void> {
 }
 
 export async function requestPasswordReset(email: string): Promise<void> {
-  await axios.post('https://apicomple-1.onrender.com/usuarios/recuperar', { email });
+  await axios.post(`${API_BASE_URL}/usuarios/recuperar`, { email });
+}
+
+export async function resetPassword(token: string, nuevaPassword: string): Promise<void> {
+  await axios.post(`${API_BASE_URL}/usuarios/reset`, { token, nuevaPassword });
 }
 
 export async function login(email: string, password: string): Promise<LoginResponse> {
