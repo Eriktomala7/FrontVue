@@ -64,7 +64,7 @@
                     <span class="notification-dot" :class="notification.tipo === 'APROBADA' ? 'dot-approved' : 'dot-rejected'" aria-hidden="true" />
                     <span>
                       <span class="notification-message">{{ notification.mensaje }}</span>
-                      <time :datetime="notification.fecha">{{ formatNotificationDate(notification.fecha) }}</time>
+                      <time :datetime="notification.fecha">{{ formatDateTime(notification.fecha) }}</time>
                     </span>
                   </button>
                 </li>
@@ -98,6 +98,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { getCurrentUser, logout, type User } from '../services/authService'
+import { formatDateTime } from '../utils/format'
 import { getNotificaciones, marcarNotificacionLeida, type NotificacionSolicitud } from '../services/requestsService'
 
 const route = useRoute()
@@ -161,12 +162,6 @@ async function toggleNotifications() {
   notificationsOpen.value = !notificationsOpen.value
   if (!notificationsOpen.value) return
   await loadNotifications()
-}
-
-function formatNotificationDate(iso: string) {
-  const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return ''
-  return new Intl.DateTimeFormat('es', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).format(date)
 }
 
 function handleDocumentClick(event: MouseEvent) {

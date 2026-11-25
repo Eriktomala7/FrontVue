@@ -107,6 +107,7 @@ import { getMovimientos } from '../../services/movementsService'
 import { getProductos, type Producto } from '../../services/productsService'
 import { getRecentMovements, type MovimientoReciente } from '../../services/dashboardService'
 import ReportsService from '../../services/ReportsService'
+import { formatDate } from '../../utils/format'
 import './Dashboard.css'
 
 function shouldShowMovementReason(reason?: string) {
@@ -151,9 +152,4 @@ async function loadDashboard() {
   }
 }
 
-function formatDate(value: string) {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return 'Fecha desconocida'
-  return new Intl.DateTimeFormat('es', { day: '2-digit', month: 'short' }).format(date)
-}
 </script>

@@ -1,15 +1,19 @@
 <template>
   <section class="product-catalog">
-    <header class="catalog-header">
-      <div>
-        <h2 class="catalog-title">Catálogo de productos</h2>
-        <p class="catalog-subtitle">Administra los artículos registrados en tu inventario.</p>
-      </div>
-      <button class="create-product-button" type="button" @click="openNew">
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14m-7-7h14" /></svg>
-        Nuevo producto
-      </button>
-    </header>
+    <PageHeader
+      title="Catálogo de productos"
+      subtitle="Administra los artículos registrados en tu inventario."
+      header-class="catalog-header"
+      title-class="catalog-title"
+      subtitle-class="catalog-subtitle"
+    >
+      <template #actions>
+        <button class="create-product-button" type="button" @click="openNew">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14m-7-7h14" /></svg>
+          Nuevo producto
+        </button>
+      </template>
+    </PageHeader>
 
     <div class="product-filters">
       <label class="product-search">
@@ -64,7 +68,14 @@
             <td class="product-code">{{ p.codigo }}</td>
             <td>{{ categoriaNombre(p) }}</td>
             <td class="product-stock"><strong>{{ p.cantidad }}</strong><span>{{ displayUnit(p) }}</span></td>
-            <td><span class="product-status" :class="statusClass(p)">{{ statusLabel(p) }}</span></td>
+            <td>
+              <StatusBadge
+                :label="statusLabel(p)"
+                :variant="p.estado === 'ACTIVO' ? 'active' : 'inactive'"
+                badge-class="product-status"
+                :class="statusClass(p)"
+              />
+            </td>
             <td>
               <div class="product-actions">
                 <button class="product-action edit-product" type="button" @click="openEdit(p)" :aria-label="`Editar ${p.nombre}`">
@@ -178,27 +189,33 @@
     </div>
     <!-- /Modal -->
 
-    <div v-if="deleteModalOpen" class="modal-overlay" @click.self="closeDeleteModal">
-      <section class="modal delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
-        <h3 id="delete-modal-title" class="modal-title">Eliminar producto</h3>
-        <p class="delete-message">
-          ¿Seguro que deseas eliminar <strong>{{ deletingProduct?.nombre }}</strong>?
-          Esta acción no se puede deshacer.
-        </p>
-        <p v-if="deleteError" class="error" role="alert">{{ deleteError }}</p>
-        <div class="modal-actions">
-          <button type="button" @click="closeDeleteModal" :disabled="deleting">Cancelar</button>
-          <button type="button" class="confirm-delete" @click="onDelete" :disabled="deleting">
-            {{ deleting ? 'Eliminando...' : 'Eliminar producto' }}
-          </button>
-        </div>
-      </section>
-    </div>
+    <ConfirmModal
+      :open="deleteModalOpen"
+      title="Eliminar producto"
+      title-id="delete-modal-title"
+      panel-class="modal delete-modal"
+      :error="deleteError"
+      @close="closeDeleteModal"
+    >
+      <p class="delete-message">
+        ¿Seguro que deseas eliminar <strong>{{ deletingProduct?.nombre }}</strong>?
+        Esta acción no se puede deshacer.
+      </p>
+      <template #actions>
+        <button type="button" @click="closeDeleteModal" :disabled="deleting">Cancelar</button>
+        <button type="button" class="confirm-delete" @click="onDelete" :disabled="deleting">
+          {{ deleting ? 'Eliminando...' : 'Eliminar producto' }}
+        </button>
+      </template>
+    </ConfirmModal>
   </section>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import PageHeader from '../../components/PageHeader.vue'
+import StatusBadge from '../../components/StatusBadge.vue'
+import ConfirmModal from '../../components/ConfirmModal.vue'
 import './Products.css'
 import {
   getProductos,

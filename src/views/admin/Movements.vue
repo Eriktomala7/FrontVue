@@ -150,6 +150,7 @@ import { onMounted, ref } from 'vue'
 import ReportsService, { type MovimientoReporte } from '../../services/ReportsService'
 import { getProductos, type Producto } from '../../services/productsService'
 import { updateMovimiento, type TipoMovimiento } from '../../services/movementsService'
+import { formatDate as formatDateUtil } from '../../utils/format'
 
 const loading = ref(false)
 const saving = ref(false)
@@ -281,15 +282,13 @@ function quantityClass(movement: MovimientoReporte) {
 }
 
 function formatDate(iso: string) {
-  const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return '—'
-  return new Intl.DateTimeFormat('es', {
+  return formatDateUtil(iso, {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  }).format(date)
+  }) || '—'
 }
 </script>
 

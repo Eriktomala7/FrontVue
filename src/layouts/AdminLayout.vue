@@ -72,7 +72,7 @@
                     <span class="admin-notification-dot" aria-hidden="true" />
                     <span>
                       <span class="admin-notification-message">{{ notification.mensaje }}</span>
-                      <time :datetime="notification.fecha">{{ formatNotificationDate(notification.fecha) }}</time>
+                      <time :datetime="notification.fecha">{{ formatDateTime(notification.fecha) }}</time>
                     </span>
                   </RouterLink>
                 </li>
@@ -127,6 +127,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { getCurrentUser, logout } from '../services/authService'
+import { formatDateTime } from '../utils/format'
 import {
   getNotificacionesAdmin,
   getNotificacionesStock,
@@ -223,12 +224,6 @@ async function toggleNotifications() {
   notificationsOpen.value = !notificationsOpen.value
   if (!notificationsOpen.value) return
   await loadNotifications()
-}
-
-function formatNotificationDate(iso: string) {
-  const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return ''
-  return new Intl.DateTimeFormat('es', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).format(date)
 }
 
 function handleDocumentClick(event: MouseEvent) {

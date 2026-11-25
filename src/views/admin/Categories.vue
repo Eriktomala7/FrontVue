@@ -1,15 +1,19 @@
 <template>
   <section class="category-catalog">
-    <header class="category-header">
-      <div>
-        <h2 class="category-heading">Categorías</h2>
-        <p class="category-subtitle">Organiza el catálogo para encontrar todo más rápido.</p>
-      </div>
-      <button class="create-category-button" type="button" @click="openNew">
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14m-7-7h14" /></svg>
-        Nueva categoría
-      </button>
-    </header>
+    <PageHeader
+      title="Categorías"
+      subtitle="Organiza el catálogo para encontrar todo más rápido."
+      header-class="category-header"
+      title-class="category-heading"
+      subtitle-class="category-subtitle"
+    >
+      <template #actions>
+        <button class="create-category-button" type="button" @click="openNew">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14m-7-7h14" /></svg>
+          Nueva categoría
+        </button>
+      </template>
+    </PageHeader>
 
     <p v-if="error" class="category-error" role="alert">{{ error }}</p>
 
@@ -26,9 +30,12 @@
           </div>
         </div>
         <footer class="category-card-footer">
-          <span class="category-state" :class="{ inactive: (category.estado || 'ACTIVO') !== 'ACTIVO' }">
-            {{ (category.estado || 'ACTIVO') === 'ACTIVO' ? 'Activa' : 'Inactiva' }}
-          </span>
+          <StatusBadge
+            :label="(category.estado || 'ACTIVO') === 'ACTIVO' ? 'Activa' : 'Inactiva'"
+            :variant="(category.estado || 'ACTIVO') === 'ACTIVO' ? 'active' : 'inactive'"
+            badge-class="category-state"
+            :class="{ inactive: (category.estado || 'ACTIVO') !== 'ACTIVO' }"
+          />
           <div class="category-actions">
             <button class="category-action edit-category" type="button" @click="openEdit(category)">
               <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m16 4 4 4M4 20l4-.8L19.5 7.7a2.12 2.12 0 0 0-3-3L5.2 16 4 20Z" /></svg>
@@ -80,27 +87,34 @@
       </section>
     </div>
 
-    <div v-if="deleteModalOpen" class="modal-overlay" @click.self="closeDeleteModal">
-      <section class="modal delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-category-title">
-        <h3 id="delete-category-title" class="modal-title">Eliminar categoría</h3>
-        <p class="delete-message">
-          ¿Seguro que deseas eliminar <strong>{{ deletingCategory?.nombre }}</strong>?
-          Esta acción no se puede deshacer.
-        </p>
-        <p v-if="deleteError" class="category-error" role="alert">{{ deleteError }}</p>
-        <div class="modal-actions">
-          <button type="button" class="modal-button" @click="closeDeleteModal" :disabled="deleting">Cancelar</button>
-          <button type="button" class="modal-button danger" @click="onDelete" :disabled="deleting">
-            {{ deleting ? 'Eliminando...' : 'Eliminar categoría' }}
-          </button>
-        </div>
-      </section>
-    </div>
+    <ConfirmModal
+      :open="deleteModalOpen"
+      title="Eliminar categoría"
+      title-id="delete-category-title"
+      panel-class="modal delete-modal"
+      :error="deleteError"
+      error-class="category-error"
+      @close="closeDeleteModal"
+    >
+      <p class="delete-message">
+        ¿Seguro que deseas eliminar <strong>{{ deletingCategory?.nombre }}</strong>?
+        Esta acción no se puede deshacer.
+      </p>
+      <template #actions>
+        <button type="button" class="modal-button" @click="closeDeleteModal" :disabled="deleting">Cancelar</button>
+        <button type="button" class="modal-button danger" @click="onDelete" :disabled="deleting">
+          {{ deleting ? 'Eliminando...' : 'Eliminar categoría' }}
+        </button>
+      </template>
+    </ConfirmModal>
   </section>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import PageHeader from '../../components/PageHeader.vue'
+import StatusBadge from '../../components/StatusBadge.vue'
+import ConfirmModal from '../../components/ConfirmModal.vue'
 import {
   getCategorias,
   createCategoria,

@@ -172,6 +172,7 @@ import {
   type NuevaSolicitud,
   type SolicitudDTO
 } from '../../services/requestsService'
+import { formatDate as formatDateUtil } from '../../utils/format'
 
 type EstadoFiltro = 'TODOS' | EstadoSolicitud
 
@@ -310,13 +311,11 @@ async function onCreate() {
 }
 
 function formatDate(iso: string) {
-  const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return '—'
-  return new Intl.DateTimeFormat('es', {
+  return formatDateUtil(iso, {
     day: '2-digit',
     month: 'short',
     year: 'numeric'
-  }).format(date)
+  }) || '—'
 }
 
 onMounted(() => {

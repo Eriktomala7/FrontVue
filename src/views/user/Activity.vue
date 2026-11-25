@@ -49,6 +49,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { getCurrentUser } from '../../services/authService'
 import { getSolicitudes, type EstadoSolicitud, type SolicitudDTO } from '../../services/requestsService'
+import { formatDate } from '../../utils/format'
 
 type ActivityEntry = {
   request: SolicitudDTO
@@ -105,12 +106,6 @@ async function loadActivity() {
   } finally {
     loading.value = false
   }
-}
-
-function formatDate(value: string) {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return ''
-  return new Intl.DateTimeFormat('es', { day: '2-digit', month: 'short' }).format(date)
 }
 
 onMounted(() => void loadActivity())
