@@ -37,7 +37,7 @@
         <h2>{{ selectedReportTitle }}</h2>
         <div v-if="selectedReport === 'inventory' || selectedReport === 'low' || selectedReport === 'topProduct'" class="results-actions">
           <button
-            v-if="selectedReport === 'inventory' || selectedReport === 'low'"
+            v-if="selectedReport === 'inventory' || selectedReport === 'low' || selectedReport === 'topProduct'"
             class="result-button"
             type="button"
             :aria-expanded="filtersOpen"
@@ -114,11 +114,11 @@
         </div>
       </div>
 
-      <div v-if="filtersOpen && (selectedReport === 'inventory' || selectedReport === 'low')" class="report-filters">
+      <div v-if="filtersOpen && (selectedReport === 'inventory' || selectedReport === 'low' || selectedReport === 'topProduct')" class="report-filters">
         <template v-if="selectedReport === 'inventory'">
           <label class="report-field">
             <span>Categoría</span>
-            <select v-model="inventoryFilters.idCategoria">
+            <select v-model.number="inventoryFilters.idCategoria">
               <option :value="undefined">Todas las categorías</option>
               <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.nombre }}</option>
             </select>
@@ -132,10 +132,10 @@
             </select>
           </label>
         </template>
-        <template v-else>
+        <template v-else-if="selectedReport === 'low'">
           <label class="report-field">
             <span>Categoría</span>
-            <select v-model="lowFilters.idCategoria">
+            <select v-model.number="lowFilters.idCategoria">
               <option :value="undefined">Todas las categorías</option>
               <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.nombre }}</option>
             </select>
@@ -143,6 +143,15 @@
           <label class="report-field">
             <span>Nivel de alerta</span>
             <input type="number" v-model.number="lowFilters.nivelAlerta" min="0" placeholder="Predeterminado" />
+          </label>
+        </template>
+        <template v-else>
+          <label class="report-field">
+            <span>Categoría</span>
+            <select v-model.number="topProductFilters.idCategoria">
+              <option :value="undefined">Todas las categorías</option>
+              <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.nombre }}</option>
+            </select>
           </label>
         </template>
         <button class="apply-filters" type="button" @click="loadSelected" :disabled="selectedLoading">
@@ -257,6 +266,7 @@ const categories = ref<Categoria[]>([])
 const products = ref<Producto[]>([])
 const inventoryFilters = ref<{ idCategoria?: number; estado: string }>({ estado: '' })
 const lowFilters = ref<{ idCategoria?: number; nivelAlerta?: number }>({})
+const topProductFilters = ref<{ idCategoria?: number }>({})
 
 const mv = ref<{ fechaInicio?: string; fechaFin?: string; tipo: 'TODOS' | 'ENTRADA' | 'SALIDA' | 'AJUSTE'; idCategoria?: number; idProducto?: number }>({ tipo: 'TODOS' })
 const movementProducts = computed(() => {
@@ -297,9 +307,13 @@ async function loadInventory() {
   try {
     loading.value.inventory = true
     error.value = null
-    inventory.value = await ReportsService.getInventoryReport({
-      idCategoria: inventoryFilters.value.idCategoria,
-      estado: inventoryFilters.value.estado || undefined,
+    const reportProducts = await ReportsService.getInventoryReport()
+    const categoryId = getNumericId(inventoryFilters.value.idCategoria)
+    const status = inventoryFilters.value.estado.toUpperCase()
+    inventory.value = reportProducts.filter(product => {
+      const matchesCategory = categoryId === undefined || reportProductMatchesCategory(product, categoryId)
+      const matchesStatus = !status || product.estado.toUpperCase() === status
+      return matchesCategory && matchesStatus
     })
     hasLoaded.value.inventory = true
   } catch (e: any) {
@@ -325,13 +339,27 @@ async function loadMovements() {
       idProducto: mv.value.idProducto,
     }
     const reportMovements = await ReportsService.getMovementReport(params)
-    movements.value = mv.value.idCategoria
-      ? reportMovements.filter(movement => {
-        const product = products.value.find(item => item.id === movement.id_producto)
-        const categoryId = (product && getProductCategoryId(product)) || movement.producto?.id_categoria
-        return categoryId === mv.value.idCategoria
-      })
-      : reportMovements
+    const categoryId = getNumericId(mv.value.idCategoria)
+    const selectedProductId = getNumericId(mv.value.idProducto)
+    const startDate = mv.value.fechaInicio
+      ? new Date(`${mv.value.fechaInicio}T00:00:00`).getTime()
+      : Number.NEGATIVE_INFINITY
+    const endDate = mv.value.fechaFin
+      ? new Date(`${mv.value.fechaFin}T23:59:59.999`).getTime()
+      : Number.POSITIVE_INFINITY
+    movements.value = reportMovements.filter(movement => {
+      const movementDate = new Date(movement.fecha).getTime()
+      const productId = getNumericId(movement.id_producto) || getNumericId(movement.producto?.id)
+      const product = products.value.find(item => getNumericId(item.id) === productId)
+      const movementCategoryId = (product && getProductCategoryId(product))
+        ?? getNumericId(movement.producto?.id_categoria)
+      const matchesDate = (!mv.value.fechaInicio && !mv.value.fechaFin)
+        || (Number.isFinite(movementDate) && movementDate >= startDate && movementDate <= endDate)
+      const matchesType = mv.value.tipo === 'TODOS' || movement.tipo.toUpperCase() === mv.value.tipo
+      const matchesProduct = selectedProductId === undefined || productId === selectedProductId
+      const matchesCategory = categoryId === undefined || movementCategoryId === categoryId
+      return matchesDate && matchesType && matchesProduct && matchesCategory
+    })
     hasLoaded.value.movements = true
   } catch (e: any) {
     console.error(e)
@@ -353,17 +381,43 @@ function onMovementCategoryChange() {
 }
 
 function getProductCategoryId(product: Producto): number | undefined {
-  const productWithCategoryId = product as Producto & { id_categoria?: number }
-  if (productWithCategoryId.id_categoria) return productWithCategoryId.id_categoria
-  if (typeof product.categoria === 'object') return product.categoria?.id
-  return categories.value.find(category => category.nombre === product.categoria)?.id
+  const productWithCategoryId = product as Producto & { id_categoria?: number | string }
+  const categoryId = getNumericId(productWithCategoryId.id_categoria)
+    ?? (typeof product.categoria === 'object' ? getNumericId(product.categoria?.id) : undefined)
+  if (categoryId !== undefined) return categoryId
+  const categoryName = typeof product.categoria === 'object' ? product.categoria.nombre : product.categoria
+  return categories.value.find(category => normalizeCategoryName(category.nombre) === normalizeCategoryName(categoryName))?.id
+}
+
+function getNumericId(value: unknown): number | undefined {
+  if (value === undefined || value === null || value === '') return undefined
+  const id = Number(value)
+  return Number.isInteger(id) ? id : undefined
+}
+
+function normalizeCategoryName(value: unknown): string {
+  if (typeof value !== 'string') return ''
+  return value.trim().toLocaleLowerCase()
+}
+
+function reportProductMatchesCategory(product: ProductoReporte, categoryId: number): boolean {
+  const productCategoryId = getNumericId(product.id_categoria)
+  if (productCategoryId !== undefined) return productCategoryId === categoryId
+  const category = categories.value.find(item => item.id === categoryId)
+  return Boolean(category && normalizeCategoryName(product.categoria) === normalizeCategoryName(category.nombre))
 }
 
 async function loadLow() {
   try {
     loading.value.low = true
     error.value = null
-    lowStock.value = await ReportsService.getLowStockReport(lowFilters.value)
+    const reportProducts = await ReportsService.getLowStockReport({
+      nivelAlerta: lowFilters.value.nivelAlerta,
+    })
+    const categoryId = getNumericId(lowFilters.value.idCategoria)
+    lowStock.value = categoryId === undefined
+      ? reportProducts
+      : reportProducts.filter(product => reportProductMatchesCategory(product, categoryId))
     hasLoaded.value.low = true
   } catch (e: any) {
     console.error(e)
@@ -377,7 +431,59 @@ async function loadTopProduct() {
   try {
     loading.value.topProduct = true
     error.value = null
-    topProduct.value = await ReportsService.getProductWithMostMovementsReport()
+    const categoryId = getNumericId(topProductFilters.value.idCategoria)
+    if (categoryId === undefined) {
+      topProduct.value = await ReportsService.getProductWithMostMovementsReport()
+    } else {
+      const reportMovements = await ReportsService.getMovementReport()
+      const productCounts = new Map<number, {
+        count: number;
+        movement: MovimientoReporte;
+        product?: Producto;
+      }>()
+
+      for (const movement of reportMovements) {
+        if (movement.estado.toUpperCase() !== 'ACTIVO') continue
+        const productId = getNumericId(movement.id_producto) || getNumericId(movement.producto?.id)
+        if (productId === undefined || productId <= 0) continue
+        const product = products.value.find(item => getNumericId(item.id) === productId)
+        const movementCategoryId = (product && getProductCategoryId(product))
+          ?? getNumericId(movement.producto?.id_categoria)
+        if (movementCategoryId !== categoryId) continue
+
+        const existing = productCounts.get(productId)
+        if (existing) {
+          existing.count += 1
+        } else {
+          productCounts.set(productId, { count: 1, movement, product })
+        }
+      }
+
+      let mostMoved: { id: number; count: number; movement: MovimientoReporte; product?: Producto } | undefined
+      for (const [id, result] of productCounts) {
+        if (!mostMoved || result.count > mostMoved.count) {
+          mostMoved = { id, ...result }
+        }
+      }
+
+      if (!mostMoved) {
+        topProduct.value = null
+      } else {
+        const category = mostMoved.product?.categoria
+        const categoryName = typeof category === 'object'
+          ? category.nombre
+          : category || categories.value.find(item => item.id === categoryId)?.nombre
+        topProduct.value = {
+          producto: {
+            id: mostMoved.id,
+            codigo: mostMoved.product?.codigo || mostMoved.movement.producto?.codigo,
+            nombre: mostMoved.product?.nombre || mostMoved.movement.producto?.nombre,
+            categoria: categoryName,
+          },
+          totalMovimientos: mostMoved.count,
+        }
+      }
+    }
     hasLoaded.value.topProduct = true
   } catch (e: any) {
     console.error(e)

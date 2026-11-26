@@ -24,6 +24,7 @@ export interface LowStockReportParams {
 
 export interface ProductoReporte {
   id: number;
+  id_categoria?: number;
   codigo: string;
   nombre: string;
   descripcion: string;
@@ -82,6 +83,12 @@ export interface ProductoMasMovimientosReporte {
   totalMovimientos: number;
 }
 
+function normalizeCategoryId(value: unknown): number | undefined {
+  if (value === undefined || value === null || value === '') return undefined;
+  const id = Number(value);
+  return Number.isInteger(id) ? id : undefined;
+}
+
 const ReportsService = {
   async getInventoryReport(params: InventoryReportParams = {}): Promise<ProductoReporte[]> {
     const response = await axios.get(`${API_URL}/reportes/inventario`, { params });
@@ -89,6 +96,7 @@ const ReportsService = {
     const items = Array.isArray(response.data) ? response.data : response.data?.data || [];
     return items.map((item: any) => ({
       id: item.id,
+      id_categoria: normalizeCategoryId(item.id_categoria ?? item.categoria?.id),
       codigo: item.codigo,
       nombre: item.nombre,
       descripcion: item.descripcion ?? '',
@@ -125,7 +133,7 @@ const ReportsService = {
 
     const normalizedMovimientos = movimientos.map((mov: any) => ({
       id: mov.id,
-      id_producto: mov.id_producto,
+      id_producto: Number(mov.id_producto ?? mov.producto?.id) || 0,
       tipo: mov.tipo,
       cantidad: mov.cantidad,
       motivo: mov.motivo || '',
@@ -137,7 +145,7 @@ const ReportsService = {
         codigo: mov.producto?.codigo || '',
         nombre: mov.producto?.nombre || 'Producto no encontrado',
         descripcion: mov.producto?.descripcion || '',
-        id_categoria: mov.producto?.id_categoria || 0,
+        id_categoria: normalizeCategoryId(mov.producto?.id_categoria ?? mov.producto?.categoria?.id) ?? 0,
         cantidad: mov.producto?.cantidad || 0,
         precio_compra: mov.producto?.precio_compra || 0,
         precio_venta: mov.producto?.precio_venta || 0,
@@ -166,6 +174,7 @@ const ReportsService = {
     const items = Array.isArray(response.data) ? response.data : response.data?.data || [];
     return items.map((item: any) => ({
       id: item.id,
+      id_categoria: normalizeCategoryId(item.id_categoria ?? item.categoria?.id),
       codigo: item.codigo,
       nombre: item.nombre,
       descripcion: item.descripcion ?? '',
