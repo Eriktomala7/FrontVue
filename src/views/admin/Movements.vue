@@ -192,11 +192,16 @@ async function buscar() {
 
   try {
     loading.value = true
-    data.value = await ReportsService.getMovementReport({
+    const movimientos = await ReportsService.getMovementReport({
       fechaInicio: fechaInicio.value,
       fechaFin: fechaFin.value,
       tipoMovimiento: tipo.value === 'TODOS' ? undefined : tipo.value,
       idProducto: idProducto.value,
+    })
+    data.value = [...movimientos].sort((a, b) => {
+      const fechaA = new Date(a.fecha).getTime()
+      const fechaB = new Date(b.fecha).getTime()
+      return (Number.isNaN(fechaB) ? 0 : fechaB) - (Number.isNaN(fechaA) ? 0 : fechaA)
     })
   } catch (e: any) {
     console.error(e)
