@@ -83,10 +83,17 @@
           </select>
         </label>
         <label class="report-field">
+          <span>Categoría</span>
+          <select v-model.number="mv.idCategoria" @change="onMovementCategoryChange">
+            <option :value="undefined">Todas las categorías</option>
+            <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.nombre }}</option>
+          </select>
+        </label>
+        <label class="report-field">
           <span>Producto</span>
           <select v-model="mv.idProducto">
             <option :value="undefined">Todos los productos</option>
-            <option v-for="product in products" :key="product.id" :value="product.id">
+            <option v-for="product in movementProducts" :key="product.id" :value="product.id">
               {{ product.nombre }} ({{ product.codigo }})
             </option>
           </select>
@@ -253,7 +260,11 @@ const products = ref<Producto[]>([])
 const inventoryFilters = ref<{ idCategoria?: number; estado: string }>({ estado: '' })
 const lowFilters = ref<{ idCategoria?: number; nivelAlerta?: number }>({})
 
-const mv = ref<{ fechaInicio?: string; fechaFin?: string; tipo: 'TODOS' | 'ENTRADA' | 'SALIDA' | 'AJUSTE'; idProducto?: number }>({ tipo: 'TODOS' })
+const mv = ref<{ fechaInicio?: string; fechaFin?: string; tipo: 'TODOS' | 'ENTRADA' | 'SALIDA' | 'AJUSTE'; idCategoria?: number; idProducto?: number }>({ tipo: 'TODOS' })
+const movementProducts = computed(() => {
+  if (!mv.value.idCategoria) return products.value
+  return products.value.filter(product => getProductCategoryId(product) === mv.value.idCategoria)
+})
 
 const reportTypes = [
   { id: 'inventory' as const, title: 'Inventario general', description: 'Consulta existencias, categorías y estado de los productos.' },
@@ -315,7 +326,14 @@ async function loadMovements() {
       tipoMovimiento: mv.value.tipo === 'TODOS' ? undefined : mv.value.tipo,
       idProducto: mv.value.idProducto,
     }
-    movements.value = await ReportsService.getMovementReport(params)
+    const reportMovements = await ReportsService.getMovementReport(params)
+    movements.value = mv.value.idCategoria
+      ? reportMovements.filter(movement => {
+        const product = products.value.find(item => item.id === movement.id_producto)
+        const categoryId = (product && getProductCategoryId(product)) || movement.producto?.id_categoria
+        return categoryId === mv.value.idCategoria
+      })
+      : reportMovements
     hasLoaded.value.movements = true
   } catch (e: any) {
     console.error(e)
@@ -328,6 +346,19 @@ async function loadMovements() {
 function clearMovementFilters() {
   mv.value = { tipo: 'TODOS' }
   void loadMovements()
+}
+
+function onMovementCategoryChange() {
+  if (mv.value.idProducto && !movementProducts.value.some(product => product.id === mv.value.idProducto)) {
+    mv.value.idProducto = undefined
+  }
+}
+
+function getProductCategoryId(product: Producto): number | undefined {
+  const productWithCategoryId = product as Producto & { id_categoria?: number }
+  if (productWithCategoryId.id_categoria) return productWithCategoryId.id_categoria
+  if (typeof product.categoria === 'object') return product.categoria?.id
+  return categories.value.find(category => category.nombre === product.categoria)?.id
 }
 
 async function loadLow() {

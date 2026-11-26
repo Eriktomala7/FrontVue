@@ -233,7 +233,7 @@
 
 .reports-page .movement-filters {
   display: grid;
-  grid-template-columns: minmax(240px, 1.2fr) minmax(160px, .8fr) minmax(210px, 1.2fr) auto;
+  grid-template-columns: minmax(240px, 1.2fr) minmax(160px, .8fr) minmax(170px, .9fr) minmax(210px, 1.2fr) auto;
   align-items: end;
   gap: 14px;
   margin: 4px 0 18px;
