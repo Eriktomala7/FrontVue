@@ -330,14 +330,16 @@ async function loadCategories() {
   }
 }
 
-function openNew() {
+async function openNew() {
   isEditing.value = false
   editingId.value = null
   formError.value = null
   productPhoto.value = ''
   selectedCategoriaId.value = undefined
 
-  // ✅ GENERACIÓN AUTOMÁTICA DE CÓDIGO PROGRESIVO
+  await load()
+
+  // Generar a partir del número más alto devuelto por el servidor.
   form.value.codigo = generarCodigoProducto()
   form.value.nombre = ''
   form.value.cantidad = 0
@@ -351,19 +353,21 @@ function openNew() {
   modalOpen.value = true
 }
 
-// ✅ FUNCIÓN PARA GENERAR CÓDIGO AUTOMÁTICO PROGRESIVO
+// Genera el siguiente código desde el número más alto numérico consultado al servidor.
 function generarCodigoProducto(): string {
-  // Obtener el último número usado del localStorage
-  const ultimoNumero = parseInt(localStorage.getItem('ultimoCodigoProducto') || '0');
-  const nuevoNumero = ultimoNumero + 1;
+  let ultimoNumero: bigint | null = null
 
-  // Guardar el nuevo número para la próxima vez
-  localStorage.setItem('ultimoCodigoProducto', nuevoNumero.toString());
+  for (const producto of items.value) {
+    const codigo = producto.codigo?.trim() || ''
+    if (/^\d+$/.test(codigo)) {
+      const numero = BigInt(codigo)
+      if (ultimoNumero === null || numero > ultimoNumero) {
+        ultimoNumero = numero
+      }
+    }
+  }
 
-  // Formatear con ceros a la izquierda (6 dígitos)
-  const numeroFormateado = nuevoNumero.toString().padStart(6, '0');
-
-  return `PROD${numeroFormateado}`;
+  return ultimoNumero === null ? '1' : (ultimoNumero + 1n).toString()
 }
 
 function openEdit(p: Producto) {
@@ -457,9 +461,9 @@ async function onSave() {
       formError.value = 'Seleccione una categoría'
       return
     }
-    const codigoNuevo = form.value.codigo.trim().toLocaleLowerCase()
-    if (codigoNuevo && items.value.some(p => p.id !== editingId.value && p.codigo.trim().toLocaleLowerCase() === codigoNuevo)) {
-      formError.value = `El código ${form.value.codigo.trim()} ya existe en otro producto`
+    const codigoNuevo = (form.value.codigo || '').trim().toLocaleLowerCase()
+    if (codigoNuevo && items.value.some(p => p.id !== editingId.value && (p.codigo || '').trim().toLocaleLowerCase() === codigoNuevo)) {
+      formError.value = `El código ${(form.value.codigo || '').trim()} ya existe en otro producto`
       return
     }
 
