@@ -171,19 +171,17 @@
         </table>
 
         <table v-else-if="selectedReport === 'movements'" class="report-table">
-          <thead><tr><th>Fecha</th><th>Tipo</th><th>Producto</th><th>Código</th><th>Cantidad</th><th>Usuario</th><th>Motivo</th></tr></thead>
+          <thead><tr><th>Fecha</th><th>Tipo</th><th>Producto</th><th>Cantidad</th><th>Usuario</th></tr></thead>
           <tbody>
             <tr v-for="movement in movements" :key="movement.id">
               <td>{{ formatDate(movement.fecha) }}</td>
               <td><span class="movement-type" :class="`type-${movement.tipo.toLowerCase()}`">{{ movement.tipo }}</span></td>
               <td class="report-product">{{ movement.producto?.nombre }}</td>
-              <td>{{ movement.producto?.codigo }}</td>
               <td>{{ movement.cantidad }}</td>
               <td>{{ movement.usuario?.nombre }}</td>
-              <td>{{ movement.motivo || '—' }}</td>
             </tr>
-            <tr v-if="!selectedLoading && movements.length === 0"><td colspan="7" class="empty-report">{{ hasLoaded.movements ? 'No hay movimientos para estos filtros.' : 'Sin datos. Aplica los filtros para comenzar.' }}</td></tr>
-            <tr v-if="selectedLoading && movements.length === 0"><td colspan="7" class="empty-report">Cargando movimientos...</td></tr>
+            <tr v-if="!selectedLoading && movements.length === 0"><td colspan="5" class="empty-report">{{ hasLoaded.movements ? 'No hay movimientos para estos filtros.' : 'Sin datos. Aplica los filtros para comenzar.' }}</td></tr>
+            <tr v-if="selectedLoading && movements.length === 0"><td colspan="5" class="empty-report">Cargando movimientos...</td></tr>
           </tbody>
         </table>
 
@@ -569,15 +567,13 @@ async function exportMovements(format: 'pdf'|'excel') {
       doc.text(card.value, x + 5, 68)
     })
 
-    const columns = ['Fecha y hora', 'Tipo de movimiento', 'Producto', 'Código', 'Cantidad', 'Registrado por', 'Motivo / detalle']
+    const columns = ['Fecha y hora', 'Tipo de movimiento', 'Producto', 'Cantidad', 'Registrado por']
     const rows = movements.value.map(movement => [
       formatDate(movement.fecha),
       getMovementTypeLabel(movement.tipo),
       movement.producto?.nombre || 'Producto no especificado',
-      movement.producto?.codigo || '—',
       formatMovementQuantity(movement),
       movement.usuario?.nombre || 'No especificado',
-      movement.motivo?.trim() || 'Sin detalle indicado',
     ])
     autoTable(doc, {
       head: [columns],
@@ -624,12 +620,10 @@ async function exportMovements(format: 'pdf'|'excel') {
       Fecha: formatDate(m.fecha),
       'Tipo de movimiento': getMovementTypeLabel(m.tipo),
       Producto: m.producto?.nombre || 'Producto no especificado',
-      Código: m.producto?.codigo || '',
       Cantidad: m.cantidad,
       Unidad: m.producto?.unidad_medida || 'unidad',
       'Lectura de cantidad': formatMovementQuantity(m),
       'Registrado por': m.usuario?.nombre || 'No especificado',
-      'Motivo / detalle': m.motivo?.trim() || 'Sin detalle indicado',
     }))
     const summaryData = [
       { Resumen: 'Periodo del reporte', Detalle: movementPeriod },
@@ -647,12 +641,10 @@ async function exportMovements(format: 'pdf'|'excel') {
       { wch: 21 },
       { wch: 34 },
       { wch: 30 },
-      { wch: 18 },
       { wch: 12 },
       { wch: 16 },
       { wch: 25 },
       { wch: 24 },
-      { wch: 38 },
     ]
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, summarySheet, 'Resumen')
