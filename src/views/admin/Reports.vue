@@ -149,18 +149,17 @@
 
       <div class="report-table-wrap">
         <table v-if="selectedReport === 'inventory'" class="report-table">
-          <thead><tr><th>Código</th><th>Producto</th><th>Categoría</th><th>Stock actual</th><th>Mínimo requerido</th><th>Estado</th></tr></thead>
+          <thead><tr><th>Código</th><th>Producto</th><th>Categoría</th><th>Stock actual</th><th>Estado</th></tr></thead>
           <tbody>
             <tr v-for="product in inventory" :key="product.id">
               <td>{{ product.codigo }}</td>
               <td class="report-product">{{ product.nombre }}</td>
               <td>{{ product.categoria }}</td>
               <td>{{ product.cantidad }} {{ product.unidad_medida }}</td>
-              <td>{{ product.cantidad_minima }} {{ product.unidad_medida }}</td>
               <td><span class="table-state" :class="product.estado === 'ACTIVO' ? 'active' : 'inactive'">{{ product.estado }}</span></td>
             </tr>
-            <tr v-if="!selectedLoading && inventory.length === 0"><td colspan="6" class="empty-report">{{ hasLoaded.inventory ? 'No hay productos para estos filtros.' : 'Sin datos. Carga el reporte para comenzar.' }}</td></tr>
-            <tr v-if="selectedLoading && inventory.length === 0"><td colspan="6" class="empty-report">Cargando inventario...</td></tr>
+            <tr v-if="!selectedLoading && inventory.length === 0"><td colspan="5" class="empty-report">{{ hasLoaded.inventory ? 'No hay productos para estos filtros.' : 'Sin datos. Carga el reporte para comenzar.' }}</td></tr>
+            <tr v-if="selectedLoading && inventory.length === 0"><td colspan="5" class="empty-report">Cargando inventario...</td></tr>
           </tbody>
         </table>
 
