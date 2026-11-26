@@ -102,7 +102,7 @@
           <p v-if="passwordError" class="feedback error-feedback" role="alert">{{ passwordError }}</p>
           <p v-if="passwordSuccess" class="feedback success-feedback" role="status">{{ passwordSuccess }}</p>
 
-          <button class="security-button" type="button" @click="sendPasswordReset" :disabled="sendingReset || !user?.email">
+          <button class="security-button" type="button" :disabled="sendingReset || !user?.email" @click="sendPasswordReset">
             <span v-if="sendingReset" class="button-spinner" aria-hidden="true"></span>
             <svg v-else viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12a8 8 0 1 1 2.3 5.7M4 17v-5h5m3-5v5l3 2" /></svg>
             {{ sendingReset ? 'Enviando instrucciones...' : 'Restablecer contraseña' }}

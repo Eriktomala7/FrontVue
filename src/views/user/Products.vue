@@ -2,7 +2,7 @@
     <div class="container">
       <div class="header">
         <h2 class="title">Productos</h2>
-        <button class="btn outline" @click="load" :disabled="loading">
+        <button class="btn outline" :disabled="loading" @click="load">
           {{ loading ? 'Cargando...' : 'Refrescar' }}
         </button>
       </div>
@@ -29,7 +29,7 @@
               <td>{{ p.cantidad }}</td>
               <td>{{ p.unidad_medida }}</td>
               <td>
-                <button class="btn small" @click="openRequest(p)" :disabled="p.cantidad <= 0">Solicitar</button>
+                <button class="btn small" :disabled="p.cantidad <= 0" @click="openRequest(p)">Solicitar</button>
               </td>
             </tr>
           </tbody>
@@ -43,10 +43,10 @@
         <div class="modal">
           <h3 class="modal-title">Solicitar: {{ selected?.nombre }}</h3>
   
-          <form @submit.prevent="onRequest" class="form">
+          <form class="form" @submit.prevent="onRequest">
             <label class="field">
               <span>Cantidad *</span>
-              <input type="number" min="1" step="1" :max="selected?.cantidad || 1" v-model.number="cantidad" required />
+              <input v-model.number="cantidad" type="number" min="1" step="1" :max="selected?.cantidad || 1" required />
               <small class="muted">Disponibles: {{ selected?.cantidad }} {{ selected?.unidad_medida }}</small>
               <small v-if="selected && cantidad > selected.cantidad" class="error" role="alert">
                 No puedes solicitar más de {{ selected.cantidad }} unidades.
@@ -55,7 +55,7 @@
   
             <label class="field">
               <span>Comentario (opcional)</span>
-              <textarea rows="3" v-model.trim="comentario" placeholder="Ej: Para proyecto X" />
+              <textarea v-model.trim="comentario" rows="3" placeholder="Ej: Para proyecto X" />
             </label>
   
             <div v-if="formError" class="error">{{ formError }}</div>
@@ -79,6 +79,7 @@
   
   <script setup lang="ts">
   import { ref, onMounted } from 'vue'
+  import { getErrorMessage } from '../../utils/errors'
   import { getProductos, type Producto } from '../../services/productsService'
   import { getCurrentUser } from '../../services/authService'
   import { createSolicitud } from '../../services/requestsService'
@@ -99,9 +100,9 @@
       error.value = null
       loading.value = true
       items.value = await getProductos()
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e)
-      error.value = e?.message || 'Error al cargar productos'
+      error.value = getErrorMessage(e) || 'Error al cargar productos'
     } finally {
       loading.value = false
     }
@@ -145,9 +146,9 @@
         estado_solicitud: 'PENDIENTE',
       })
       modalOpen.value = false
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e)
-      formError.value = e?.message || 'No se pudo crear la solicitud'
+      formError.value = getErrorMessage(e) || 'No se pudo crear la solicitud'
     } finally {
       sending.value = false
     }

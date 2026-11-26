@@ -126,7 +126,7 @@ async function loadNotifications() {
     notificationsLoading.value = true
     notificationsError.value = null
     notifications.value = await getNotificaciones(userId)
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e)
     notificationsError.value = 'No se pudieron cargar las notificaciones.'
   } finally {

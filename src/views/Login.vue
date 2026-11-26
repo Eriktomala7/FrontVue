@@ -152,6 +152,7 @@
 import { computed, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { login, register, requestPasswordReset, resetPassword } from '../services/authService'
+import { getErrorMessage } from '../utils/errors'
 import './Login.css'
 
 const route = useRoute()
@@ -196,8 +197,8 @@ async function onSubmit() {
     const fallback = roleHome(stored?.rol)
     const redirect = (route.query.redirect as string) || fallback
     router.replace(redirect)
-  } catch (e: any) {
-    error.value = e?.message || 'No se pudo iniciar sesión'
+  } catch (e: unknown) {
+    error.value = getErrorMessage(e) || 'No se pudo iniciar sesión'
   } finally {
     loading.value = false
   }
@@ -234,8 +235,8 @@ async function onRegister() {
     window.setTimeout(() => {
       void router.replace('/login')
     }, 1800)
-  } catch (e: any) {
-    error.value = e?.response?.data?.message || e?.message || 'Error al registrar la cuenta. Inténtalo nuevamente.'
+  } catch (e: unknown) {
+    error.value = getErrorMessage(e) || 'Error al registrar la cuenta. Inténtalo nuevamente.'
     console.error('Registration error:', e)
   } finally {
     loading.value = false
@@ -250,8 +251,8 @@ async function onForgotPassword() {
     loading.value = true
     await requestPasswordReset(email.value.trim())
     await router.replace('/email-sent')
-  } catch (e: any) {
-    error.value = e?.response?.data?.message || e?.message || 'No se pudo solicitar la recuperación. Inténtalo nuevamente.'
+  } catch (e: unknown) {
+    error.value = getErrorMessage(e) || 'No se pudo solicitar la recuperación. Inténtalo nuevamente.'
     console.error('Password recovery error:', e)
   } finally {
     loading.value = false
@@ -284,8 +285,8 @@ async function onResetPassword() {
     window.setTimeout(() => {
       void router.replace('/login')
     }, 1800)
-  } catch (e: any) {
-    error.value = e?.response?.data?.message || e?.message || 'No se pudo restablecer la contraseña. Solicita un enlace nuevo e inténtalo nuevamente.'
+  } catch (e: unknown) {
+    error.value = getErrorMessage(e) || 'No se pudo restablecer la contraseña. Solicita un enlace nuevo e inténtalo nuevamente.'
     console.error('Password reset error:', e)
   } finally {
     loading.value = false

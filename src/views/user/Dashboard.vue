@@ -143,6 +143,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { getErrorMessage } from '../../utils/errors'
 import { RouterLink } from 'vue-router'
 import { getCurrentUser } from '../../services/authService'
 import { getRecentMovements, type MovimientoReciente } from '../../services/dashboardService'
@@ -247,9 +248,9 @@ async function submitRequest() {
     })
     requestOpen.value = false
     await loadDashboard()
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e)
-    requestError.value = e?.response?.data?.message || e?.message || 'No se pudo enviar la solicitud.'
+    requestError.value = getErrorMessage(e) || 'No se pudo enviar la solicitud.'
   } finally {
     requestSubmitting.value = false
   }

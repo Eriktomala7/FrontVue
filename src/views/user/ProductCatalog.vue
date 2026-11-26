@@ -96,6 +96,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { getErrorMessage } from '../../utils/errors'
 import { getProductos, type Producto } from '../../services/productsService'
 import { getCurrentUser } from '../../services/authService'
 import { createSolicitud } from '../../services/requestsService'
@@ -139,9 +140,9 @@ async function load() {
     error.value = null
     loading.value = true
     items.value = await getProductos()
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e)
-    error.value = e?.message || 'Error al cargar productos'
+    error.value = getErrorMessage(e) || 'Error al cargar productos'
   } finally {
     loading.value = false
   }
@@ -187,9 +188,9 @@ async function onRequest() {
     })
     modalOpen.value = false
     success.value = 'Solicitud enviada correctamente.'
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e)
-    formError.value = e?.response?.data?.message || e?.message || 'No se pudo crear la solicitud'
+    formError.value = getErrorMessage(e) || 'No se pudo crear la solicitud'
   } finally {
     sending.value = false
   }

@@ -53,8 +53,8 @@
                   <button
                     class="user-action edit-user"
                     type="button"
-                    @click="openEdit(user)"
                     :aria-label="`Editar ${user.nombre}`"
+                    @click="openEdit(user)"
                   >
                     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m16 4 4 4M4 20l4-.8L19.5 7.7a2.12 2.12 0 0 0-3-3L5.2 16 4 20Z" /></svg>
                     Editar
@@ -62,10 +62,10 @@
                   <button
                     class="user-action delete-user"
                     type="button"
-                    @click="openDelete(user)"
                     :disabled="deleting"
                     :aria-label="`Eliminar ${user.nombre}`"
                     title="Eliminar usuario"
+                    @click="openDelete(user)"
                   >
                     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16m-10 4v6m4-6v6M6 7l1 14h10l1-14M9 7V4h6v3" /></svg>
                   </button>
@@ -123,7 +123,7 @@
           </label>
           <p v-if="formError" class="users-error" role="alert">{{ formError }}</p>
           <div class="modal-actions">
-            <button class="modal-cancel" type="button" @click="closeModal" :disabled="saving">Cancelar</button>
+            <button class="modal-cancel" type="button" :disabled="saving" @click="closeModal">Cancelar</button>
             <button class="modal-submit" type="submit" :disabled="saving">
               {{ saving ? 'Guardando...' : (isEditing ? 'Guardar cambios' : 'Crear usuario') }}
             </button>
@@ -141,8 +141,8 @@
         </p>
         <p v-if="deleteError" class="users-error" role="alert">{{ deleteError }}</p>
         <div class="modal-actions">
-          <button class="modal-cancel" type="button" @click="closeDelete" :disabled="deleting">Cancelar</button>
-          <button class="modal-delete" type="button" @click="onDelete" :disabled="deleting">
+          <button class="modal-cancel" type="button" :disabled="deleting" @click="closeDelete">Cancelar</button>
+          <button class="modal-delete" type="button" :disabled="deleting" @click="onDelete">
             {{ deleting ? 'Eliminando...' : 'Eliminar usuario' }}
           </button>
         </div>
@@ -153,6 +153,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { getErrorMessage } from '../../utils/errors'
 import './Users.css'
 import {
   getUsuarios,
@@ -190,9 +191,9 @@ async function load() {
     error.value = null
     loading.value = true
     items.value = await getUsuarios()
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e)
-    error.value = e?.message || 'Error al cargar usuarios'
+    error.value = getErrorMessage(e) || 'Error al cargar usuarios'
   } finally {
     loading.value = false
   }
@@ -268,9 +269,9 @@ async function onSave() {
     }
     modalOpen.value = false
     await load()
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e)
-    formError.value = e?.message || 'No se pudo guardar el usuario'
+    formError.value = getErrorMessage(e) || 'No se pudo guardar el usuario'
   } finally {
     saving.value = false
   }
@@ -301,9 +302,9 @@ async function onDelete() {
     deleteModalOpen.value = false
     deletingUser.value = null
     await load()
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e)
-    deleteError.value = e?.message || 'No se pudo eliminar el usuario'
+    deleteError.value = getErrorMessage(e) || 'No se pudo eliminar el usuario'
   } finally {
     deleting.value = false
   }

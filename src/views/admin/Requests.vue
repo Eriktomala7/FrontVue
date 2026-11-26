@@ -83,20 +83,20 @@
                   <button
                     class="decision-button approve-button"
                     type="button"
-                    @click="aprobar(request)"
                     :disabled="actingId === request.id"
                     :aria-label="`Aprobar solicitud de ${request.usuario?.nombre || 'usuario'}`"
                     title="Aprobar solicitud"
+                    @click="aprobar(request)"
                   >
                     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>
                   </button>
                   <button
                     class="decision-button reject-button"
                     type="button"
-                    @click="rechazar(request)"
                     :disabled="actingId === request.id"
                     :aria-label="`Rechazar solicitud de ${request.usuario?.nombre || 'usuario'}`"
                     title="Rechazar solicitud"
+                    @click="rechazar(request)"
                   >
                     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
                   </button>
@@ -135,18 +135,18 @@
           </label>
           <label class="form-field">
             <span>Cantidad *</span>
-            <input type="number" min="1" :max="selectedProduct?.cantidad" step="1" v-model.number="newReq.cantidad" required />
+            <input v-model.number="newReq.cantidad" type="number" min="1" :max="selectedProduct?.cantidad" step="1" required />
             <small v-if="selectedProduct && newReq.cantidad > selectedProduct.cantidad" class="requests-error" role="alert">
               No puedes solicitar más de {{ selectedProduct.cantidad }} unidades.
             </small>
           </label>
           <label class="form-field">
             <span>Comentario (opcional)</span>
-            <textarea rows="3" v-model.trim="newReq.comentario" placeholder="Ej.: Para proyecto X" />
+            <textarea v-model.trim="newReq.comentario" rows="3" placeholder="Ej.: Para proyecto X" />
           </label>
           <p v-if="formError" class="requests-error" role="alert">{{ formError }}</p>
           <div class="modal-actions">
-            <button type="button" class="modal-cancel" @click="closeModal" :disabled="creating">Cancelar</button>
+            <button type="button" class="modal-cancel" :disabled="creating" @click="closeModal">Cancelar</button>
             <button
               type="submit"
               class="modal-submit"
@@ -198,15 +198,15 @@
         </p>
         <p v-if="actionError" class="requests-error decision-error" role="alert">{{ actionError }}</p>
         <div class="modal-actions">
-          <button type="button" class="modal-cancel" @click="closeDecisionModal" :disabled="actingId !== null">
+          <button type="button" class="modal-cancel" :disabled="actingId !== null" @click="closeDecisionModal">
             Cancelar
           </button>
           <button
             type="button"
             class="modal-submit"
             :class="{ 'decision-submit-reject': decisionRequest.status === 'RECHAZADA' }"
-            @click="confirmDecision"
             :disabled="actingId !== null"
+            @click="confirmDecision"
           >
             {{ actingId !== null ? 'Guardando...' : decisionRequest.status === 'APROBADA' ? 'Sí, aprobar' : 'Sí, rechazar' }}
           </button>
@@ -218,6 +218,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { getErrorMessage } from '../../utils/errors'
 import { getProductos, type Producto } from '../../services/productsService'
 import { getCurrentUser } from '../../services/authService'
 import {
@@ -278,9 +279,9 @@ async function load() {
     loading.value = true
     error.value = null
     requests.value = await getSolicitudes()
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e)
-    error.value = e?.message || 'Error al cargar solicitudes'
+    error.value = getErrorMessage(e) || 'Error al cargar solicitudes'
   } finally {
     loading.value = false
   }
@@ -290,9 +291,9 @@ async function loadProducts() {
   try {
     productsError.value = null
     products.value = await getProductos()
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e)
-    productsError.value = e?.message || 'Error al cargar productos'
+    productsError.value = getErrorMessage(e) || 'Error al cargar productos'
   }
 }
 
@@ -338,9 +339,9 @@ async function onCreate() {
     await createSolicitud(newReq.value)
     modalOpen.value = false
     await load()
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e)
-    formError.value = e?.message || 'No se pudo crear la solicitud'
+    formError.value = getErrorMessage(e) || 'No se pudo crear la solicitud'
   } finally {
     creating.value = false
   }
@@ -367,9 +368,9 @@ async function confirmDecision() {
     await actualizarEstadoSolicitud(request.id, status)
     decisionRequest.value = null
     await load()
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e)
-    actionError.value = e?.message || `No se pudo ${action} la solicitud`
+    actionError.value = getErrorMessage(e) || `No se pudo ${action} la solicitud`
   } finally {
     actingId.value = null
   }

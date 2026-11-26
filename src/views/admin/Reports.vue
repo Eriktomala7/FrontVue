@@ -46,15 +46,15 @@
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 5h16l-6.5 7.5V19l-3 1v-7.5L4 5Z" /></svg>
             {{ filtersOpen ? 'Ocultar filtros' : 'Filtros' }}
           </button>
-          <button class="result-button" type="button" @click="exportSelected('pdf')" :disabled="selectedLoading || !hasSelectedData">
+          <button class="result-button" type="button" :disabled="selectedLoading || !hasSelectedData" @click="exportSelected('pdf')">
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6M8 15h2a1 1 0 0 0 0-2H8v4m5 0v-4h1a2 2 0 0 1 0 4h-1m4 0v-4h3m-3 2h2" /></svg>
             PDF
           </button>
-          <button class="result-button" type="button" @click="exportSelected('excel')" :disabled="selectedLoading || !hasSelectedData">
+          <button class="result-button" type="button" :disabled="selectedLoading || !hasSelectedData" @click="exportSelected('excel')">
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6M8 13l4 6m0-6-4 6m7-6v6m3-6v6m-3-3h3" /></svg>
             Excel
           </button>
-          <button class="refresh-report" type="button" @click="loadSelected" :disabled="selectedLoading">
+          <button class="refresh-report" type="button" :disabled="selectedLoading" @click="loadSelected">
             {{ selectedLoading ? 'Cargando...' : 'Actualizar' }}
           </button>
         </div>
@@ -68,9 +68,9 @@
         <label class="report-field movement-date-field">
           <span>Rango de fechas</span>
           <div class="movement-date-range">
-            <input type="date" v-model="mv.fechaInicio" aria-label="Fecha inicial" />
+            <input v-model="mv.fechaInicio" type="date" aria-label="Fecha inicial" />
             <span aria-hidden="true">→</span>
-            <input type="date" v-model="mv.fechaFin" aria-label="Fecha final" />
+            <input v-model="mv.fechaFin" type="date" aria-label="Fecha final" />
           </div>
         </label>
         <label class="report-field">
@@ -99,16 +99,16 @@
           </select>
         </label>
         <div class="movement-filter-actions">
-          <button class="movement-search-button" type="button" @click="loadMovements" :disabled="selectedLoading">
+          <button class="movement-search-button" type="button" :disabled="selectedLoading" @click="loadMovements">
             {{ selectedLoading ? 'Buscando...' : 'Buscar' }}
           </button>
-          <button class="movement-clear-button" type="button" @click="clearMovementFilters" :disabled="selectedLoading">
+          <button class="movement-clear-button" type="button" :disabled="selectedLoading" @click="clearMovementFilters">
             Limpiar
           </button>
-          <button class="movement-export-button" type="button" @click="exportSelected('pdf')" :disabled="selectedLoading || !hasSelectedData">
+          <button class="movement-export-button" type="button" :disabled="selectedLoading || !hasSelectedData" @click="exportSelected('pdf')">
             Exportar PDF
           </button>
-          <button class="movement-export-button" type="button" @click="exportSelected('excel')" :disabled="selectedLoading || !hasSelectedData">
+          <button class="movement-export-button" type="button" :disabled="selectedLoading || !hasSelectedData" @click="exportSelected('excel')">
             Exportar Excel
           </button>
         </div>
@@ -142,7 +142,7 @@
           </label>
           <label class="report-field">
             <span>Nivel de alerta</span>
-            <input type="number" v-model.number="lowFilters.nivelAlerta" min="0" placeholder="Predeterminado" />
+            <input v-model.number="lowFilters.nivelAlerta" type="number" min="0" placeholder="Predeterminado" />
           </label>
         </template>
         <template v-else>
@@ -154,7 +154,7 @@
             </select>
           </label>
         </template>
-        <button class="apply-filters" type="button" @click="loadSelected" :disabled="selectedLoading">
+        <button class="apply-filters" type="button" :disabled="selectedLoading" @click="loadSelected">
           {{ selectedLoading ? 'Aplicando...' : 'Aplicar filtros' }}
         </button>
       </div>
@@ -230,6 +230,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { getErrorMessage } from '../../utils/errors'
 import './Reports.css'
 import ReportsService, { type ProductoReporte, type MovimientoReporte, type ProductoMasMovimientosReporte } from '../../services/ReportsService'
 import type jsPDF from 'jspdf'
@@ -316,9 +317,9 @@ async function loadInventory() {
       return matchesCategory && matchesStatus
     })
     hasLoaded.value.inventory = true
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e)
-    error.value = e?.message || 'Error al cargar el reporte de inventario'
+    error.value = getErrorMessage(e) || 'Error al cargar el reporte de inventario'
   } finally {
     loading.value.inventory = false
   }
@@ -361,9 +362,9 @@ async function loadMovements() {
       return matchesDate && matchesType && matchesProduct && matchesCategory
     })
     hasLoaded.value.movements = true
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e)
-    error.value = e?.message || 'Error al cargar el reporte de movimientos'
+    error.value = getErrorMessage(e) || 'Error al cargar el reporte de movimientos'
   } finally {
     loading.value.movements = false
   }
@@ -419,9 +420,9 @@ async function loadLow() {
       ? reportProducts
       : reportProducts.filter(product => reportProductMatchesCategory(product, categoryId))
     hasLoaded.value.low = true
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e)
-    error.value = e?.message || 'Error al cargar el reporte de stock mínimo'
+    error.value = getErrorMessage(e) || 'Error al cargar el reporte de stock mínimo'
   } finally {
     loading.value.low = false
   }
@@ -485,9 +486,9 @@ async function loadTopProduct() {
       }
     }
     hasLoaded.value.topProduct = true
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e)
-    error.value = e?.message || 'Error al cargar el reporte de productos con más movimientos'
+    error.value = getErrorMessage(e) || 'Error al cargar el reporte de productos con más movimientos'
   } finally {
     loading.value.topProduct = false
   }
@@ -1019,9 +1020,9 @@ async function loadCategories() {
   try {
     categoriesError.value = null
     categories.value = await getCategorias()
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e)
-    categoriesError.value = e?.message || 'Error al cargar categorías para los filtros'
+    categoriesError.value = getErrorMessage(e) || 'Error al cargar categorías para los filtros'
   }
 }
 

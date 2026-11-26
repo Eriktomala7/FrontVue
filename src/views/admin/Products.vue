@@ -78,17 +78,17 @@
             </td>
             <td>
               <div class="product-actions">
-                <button class="product-action edit-product" type="button" @click="openEdit(p)" :aria-label="`Editar ${p.nombre}`">
+                <button class="product-action edit-product" type="button" :aria-label="`Editar ${p.nombre}`" @click="openEdit(p)">
                   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m16 4 4 4M4 20l4-.8L19.5 7.7a2.12 2.12 0 0 0-3-3L5.2 16 4 20Z" /></svg>
                   <span>Editar</span>
                 </button>
                 <button
                   class="product-action delete-product"
                   type="button"
-                  @click="openDelete(p)"
                   :disabled="deleting"
                   :aria-label="`Eliminar ${p.nombre}`"
                   title="Eliminar producto"
+                  @click="openDelete(p)"
                 >
                   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16m-10 4v6m4-6v6M6 7l1 14h10l1-14M9 7V4h6v3" /></svg>
                 </button>
@@ -112,7 +112,7 @@
       <div class="modal">
         <h3 class="modal-title">{{ isEditing ? 'Editar Producto' : 'Nuevo Producto' }}</h3>
 
-        <form @submit.prevent="onSave" class="form">
+        <form class="form" @submit.prevent="onSave">
           <div class="grid">
             <div class="codigo-auto-container">
               <label class="field">
@@ -202,8 +202,8 @@
         Esta acción no se puede deshacer.
       </p>
       <template #actions>
-        <button type="button" @click="closeDeleteModal" :disabled="deleting">Cancelar</button>
-        <button type="button" class="confirm-delete" @click="onDelete" :disabled="deleting">
+        <button type="button" :disabled="deleting" @click="closeDeleteModal">Cancelar</button>
+        <button type="button" class="confirm-delete" :disabled="deleting" @click="onDelete">
           {{ deleting ? 'Eliminando...' : 'Eliminar producto' }}
         </button>
       </template>
@@ -213,6 +213,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { getErrorMessage } from '../../utils/errors'
 import PageHeader from '../../components/PageHeader.vue'
 import StatusBadge from '../../components/StatusBadge.vue'
 import ConfirmModal from '../../components/ConfirmModal.vue'
@@ -314,9 +315,9 @@ async function load() {
     error.value = null
     loading.value = true
     items.value = await getProductos()
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e)
-    error.value = e?.message || 'Error al cargar productos'
+    error.value = getErrorMessage(e) || 'Error al cargar productos'
   } finally {
     loading.value = false
   }
@@ -325,7 +326,7 @@ async function load() {
 async function loadCategories() {
   try {
     categories.value = await getCategorias()
-  } catch (e) {
+  } catch {
     // no bloquear UI por error de categorías
   }
 }
@@ -427,9 +428,9 @@ async function onPhotoSelected(event: Event) {
     })
     productPhoto.value = photoData
     formError.value = null
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e)
-    formError.value = e?.message || 'No se pudo cargar la foto'
+    formError.value = getErrorMessage(e) || 'No se pudo cargar la foto'
     input.value = ''
   }
 }
@@ -518,9 +519,9 @@ async function onSave() {
     }
     modalOpen.value = false
     await load()
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e)
-    formError.value = e?.message || 'No se pudo guardar el producto'
+    formError.value = getErrorMessage(e) || 'No se pudo guardar el producto'
   } finally {
     saving.value = false
   }
@@ -552,9 +553,9 @@ async function onDelete() {
     deleteModalOpen.value = false
     deletingProduct.value = null
     await load()
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e)
-    deleteError.value = e?.message || 'No se pudo eliminar el producto'
+    deleteError.value = getErrorMessage(e) || 'No se pudo eliminar el producto'
   } finally {
     deleting.value = false
   }

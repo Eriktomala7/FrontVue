@@ -44,10 +44,10 @@
             <button
               class="category-action delete-category"
               type="button"
-              @click="openDelete(category)"
               :disabled="deleting"
               :aria-label="`Eliminar ${category.nombre}`"
               title="Eliminar categoría"
+              @click="openDelete(category)"
             >
               <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16m-10 4v6m4-6v6M6 7l1 14h10l1-14M9 7V4h6v3" /></svg>
             </button>
@@ -78,7 +78,7 @@
           </label>
           <p v-if="formError" class="category-error" role="alert">{{ formError }}</p>
           <div class="modal-actions">
-            <button type="button" class="modal-button" @click="closeModal" :disabled="saving">Cancelar</button>
+            <button type="button" class="modal-button" :disabled="saving" @click="closeModal">Cancelar</button>
             <button type="submit" class="modal-button primary" :disabled="saving">
               {{ saving ? 'Guardando...' : (isEditing ? 'Guardar cambios' : 'Crear categoría') }}
             </button>
@@ -101,8 +101,8 @@
         Esta acción no se puede deshacer.
       </p>
       <template #actions>
-        <button type="button" class="modal-button" @click="closeDeleteModal" :disabled="deleting">Cancelar</button>
-        <button type="button" class="modal-button danger" @click="onDelete" :disabled="deleting">
+        <button type="button" class="modal-button" :disabled="deleting" @click="closeDeleteModal">Cancelar</button>
+        <button type="button" class="modal-button danger" :disabled="deleting" @click="onDelete">
           {{ deleting ? 'Eliminando...' : 'Eliminar categoría' }}
         </button>
       </template>
@@ -112,6 +112,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { getErrorMessage } from '../../utils/errors'
 import PageHeader from '../../components/PageHeader.vue'
 import StatusBadge from '../../components/StatusBadge.vue'
 import ConfirmModal from '../../components/ConfirmModal.vue'
@@ -149,9 +150,9 @@ async function load() {
     error.value = null
     loading.value = true
     items.value = await getCategorias()
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e)
-    error.value = e?.message || 'Error al cargar categorías'
+    error.value = getErrorMessage(e) || 'Error al cargar categorías'
   } finally {
     loading.value = false
   }
@@ -199,9 +200,9 @@ async function onSave() {
     }
     modalOpen.value = false
     await load()
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e)
-    formError.value = e?.message || 'No se pudo guardar la categoría'
+    formError.value = getErrorMessage(e) || 'No se pudo guardar la categoría'
   } finally {
     saving.value = false
   }
@@ -233,9 +234,9 @@ async function onDelete() {
     deleteModalOpen.value = false
     deletingCategory.value = null
     await load()
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e)
-    deleteError.value = e?.message || 'No se pudo eliminar la categoría'
+    deleteError.value = getErrorMessage(e) || 'No se pudo eliminar la categoría'
   } finally {
     deleting.value = false
   }

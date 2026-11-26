@@ -35,7 +35,7 @@
           <p>{{ filteredCountLabel }}</p>
         </div>
         <div class="panel-controls">
-          <button class="refresh-button" type="button" @click="loadRequests" :disabled="loading">
+          <button class="refresh-button" type="button" :disabled="loading" @click="loadRequests">
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5m-4.1-2a7 7 0 0 1 12-3L20 12M4 12l3.1 5a7 7 0 0 0 12-3" /></svg>
             {{ loading ? 'Actualizando...' : 'Actualizar' }}
           </button>
@@ -141,7 +141,7 @@
           <p v-if="productsError" class="requests-error" role="alert">{{ productsError }}</p>
           <p v-if="formError" class="requests-error" role="alert">{{ formError }}</p>
           <div class="modal-actions">
-            <button type="button" class="modal-cancel" @click="closeModal" :disabled="creating">Cancelar</button>
+            <button type="button" class="modal-cancel" :disabled="creating" @click="closeModal">Cancelar</button>
             <button
               type="submit"
               class="modal-submit"

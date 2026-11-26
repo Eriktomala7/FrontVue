@@ -22,11 +22,11 @@
       <form v-if="filtersOpen" class="movement-filters" @submit.prevent="buscar">
         <label class="filter-field">
           <span>Desde</span>
-          <input type="date" v-model="fechaInicio" />
+          <input v-model="fechaInicio" type="date" />
         </label>
         <label class="filter-field">
           <span>Hasta</span>
-          <input type="date" v-model="fechaFin" />
+          <input v-model="fechaFin" type="date" />
         </label>
         <label class="filter-field">
           <span>Tipo</span>
@@ -48,7 +48,7 @@
           <button class="filter-submit" type="submit" :disabled="loading">
             {{ loading ? 'Buscando...' : 'Aplicar filtros' }}
           </button>
-          <button class="filter-reset" type="button" @click="limpiar" :disabled="loading">Limpiar</button>
+          <button class="filter-reset" type="button" :disabled="loading" @click="limpiar">Limpiar</button>
         </div>
       </form>
 
@@ -97,9 +97,9 @@
                 <button
                   class="adjust-button"
                   type="button"
-                  @click="openAdjust(movement)"
                   :disabled="saving"
                   :aria-label="`Ajustar movimiento de ${movement.producto?.nombre || 'producto'}`"
+                  @click="openAdjust(movement)"
                 >
                   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m16 4 4 4M4 20l4-.8L19.5 7.7a2.12 2.12 0 0 0-3-3L5.2 16 4 20Z" /></svg>
                   Ajustar
@@ -134,7 +134,7 @@
           </label>
           <p v-if="adjustError" class="movement-error" role="alert">{{ adjustError }}</p>
           <div class="modal-actions">
-            <button class="modal-cancel" type="button" @click="closeAdjust" :disabled="saving">Cancelar</button>
+            <button class="modal-cancel" type="button" :disabled="saving" @click="closeAdjust">Cancelar</button>
             <button class="modal-save" type="submit" :disabled="saving">
               {{ saving ? 'Guardando...' : 'Guardar ajuste' }}
             </button>
@@ -147,6 +147,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { getErrorMessage } from '../../utils/errors'
 import ReportsService, { type MovimientoReporte } from '../../services/ReportsService'
 import { getProductos, type Producto } from '../../services/productsService'
 import { updateMovimiento, type TipoMovimiento } from '../../services/movementsService'
@@ -177,9 +178,9 @@ async function loadProducts() {
   try {
     productsError.value = null
     products.value = await getProductos()
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e)
-    productsError.value = e?.message || 'Error al cargar productos para los filtros'
+    productsError.value = getErrorMessage(e) || 'Error al cargar productos para los filtros'
   }
 }
 
@@ -203,9 +204,9 @@ async function buscar() {
       const fechaB = new Date(b.fecha).getTime()
       return (Number.isNaN(fechaB) ? 0 : fechaB) - (Number.isNaN(fechaA) ? 0 : fechaA)
     })
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e)
-    error.value = e?.message || 'Error al cargar movimientos'
+    error.value = getErrorMessage(e) || 'Error al cargar movimientos'
   } finally {
     loading.value = false
   }
@@ -260,9 +261,9 @@ async function saveAdjustment() {
     adjustModalOpen.value = false
     selectedMovement.value = null
     await buscar()
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e)
-    adjustError.value = e?.message || 'No se pudo actualizar el movimiento'
+    adjustError.value = getErrorMessage(e) || 'No se pudo actualizar el movimiento'
   } finally {
     saving.value = false
   }
